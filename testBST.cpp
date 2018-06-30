@@ -153,7 +153,10 @@ BST<int>* makeBST(vector<int>& list) {
  *
  * @param bst
  */
-void printBT(const BST<int>* bst) {};
+void printBT(const BST<int>* bst) {
+
+    printList(bst->getList());
+}
 
 /**
  * Calculates and returns the height of the binary tree.

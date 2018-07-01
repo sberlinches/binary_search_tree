@@ -151,34 +151,36 @@ BST<int>* makeBST(vector<int>& list) {
  * Prints the binary tree using an in-order traversal.
  * complexity: TODO
  *
- * @param bst
+ * @param bst The binary search tree
  */
 void printBT(const BST<int>* bst) {
 
-    printList(bst->getList());
+    cout << "[";
+    bst->printInOrder(bst->getTree());
+    cout << "]" << endl;
 }
 
 /**
  * Calculates and returns the height of the binary tree.
  * Complexity: TODO
  *
- * @param bst The binary tree
+ * @param bst The binary search tree
  * @return The height of the binary tree
  */
 int height(const BST<int>* bst) {
-
-    int n = 0;
-    return (int)ceil(log2(n)) + 1;
+    return bst->getHeight(bst->getTree());
 }
 
 /**
- * Removes the key from the binary tree.
+ * Removes the element from the binary tree.
  * Complexity: TODO
  *
- * @param key
- * @param bst
+ * @param element The element to remove
+ * @param bst The binary search tree to remove from
  */
-void remove(int key, BST<int>* bst) {};
+void remove(int element, BST<int>* bst) {
+    bst->deleteElement(element);
+};
 
 /**
  * Write an efficient function (time and space efficient) named mergeBST()
@@ -207,7 +209,7 @@ void printList(const vector<int>& list) {
 
     cout << "[";
     for(int i = 0; i < list.size(); i++)
-        cout << list[i] << ((i == list.size()-1)? "": ", ");
+        cout << list[i] << ((i == list.size()-1)? "": ",");
     cout << "]" << endl;
 }
 

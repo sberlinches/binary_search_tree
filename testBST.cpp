@@ -7,7 +7,7 @@
 using namespace std;
 
 const int MIN = 1;
-const int MAX = 10;
+const int MAX = 5;
 
 //Exercise 2: Binary Search Tree
 int getInput();
@@ -74,7 +74,6 @@ int main() {
 
     //removing the middle element of the corresponding tree
     remove(list1[n1/2], bst1);
-
     cout << "In-order traversal of bst1 after deleting " << list1[n1/2] <<" is : ";
     printBT(bst1);
 
@@ -179,8 +178,9 @@ int height(const BST<int>* bst) {
  * @param bst The binary search tree to remove from
  */
 void remove(int element, BST<int>* bst) {
-    bst->deleteElement(element);
+    //bst->deleteElement(element); //TODO: fix it
 };
+
 
 /**
  * Write an efficient function (time and space efficient) named mergeBST()
@@ -195,8 +195,27 @@ void remove(int element, BST<int>* bst) {
  */
 BST<int>* mergeBST(const BST<int>* bstA, const BST<int>* bstB) {
 
-    vector<int> list;
-    return new BST<int>(list);
+    vector<int> temp;
+    vector<int> bstAVector = bstA->bstToVector();
+    vector<int> bstBVector = bstB->bstToVector();
+
+    int i = 0, j = 0;
+
+    // Traverse both vectors inserting in ascending order
+    while (i < bstAVector.size() && j < bstBVector.size()) {
+        if (bstAVector[i] < bstBVector[j])
+            temp.push_back(bstAVector[i++]);
+        else
+            temp.push_back(bstBVector[j++]);
+    }
+
+    // Store remaining elements
+    while (i < bstAVector.size())
+        temp.push_back(bstAVector[i++]);
+    while (j < bstBVector.size())
+        temp.push_back(bstBVector[j++]);
+
+    return new BST<int>(temp);
 };
 
 /**

@@ -56,7 +56,9 @@ template <typename T>
 class BST {
 private:
     BSTNode<T>* bst;
+    void insertList(vector<T>*) const;
     void deleteByCopying(BSTNode<T>*);
+    void bstToVector_aux(const BSTNode<T>*, vector<T>*) const;
 public:
     BST(vector<T>& list);
     BSTNode<T>* getTree() const;
@@ -65,6 +67,8 @@ public:
     void deleteElement(T&);
     int getHeight(const BSTNode<T>*) const;
     void printInOrder(const BSTNode<T>*) const;
+    BST<T>* merge(const BST<T>*) const;
+    vector<T> bstToVector() const;
 };
 
 /**
@@ -76,7 +80,7 @@ public:
 template<typename T>
 BST<T>::BST(vector<T>& list) {
 
-    // Initializes the bst
+    // Initializes the bst and size
     bst = nullptr;
 
     // Inserts the elements from the list into the bst
@@ -252,5 +256,38 @@ void BST<T>::printInOrder(const BSTNode<T>* root) const {
     cout << root->element << ",";
     printInOrder(root->right);
 }
+
+/**
+ * Converts a binary search tree into a vector list.
+ *
+ * @tparam T The type of the element
+ * @return A vector list
+ */
+template<typename T>
+vector<T> BST<T>::bstToVector() const {
+
+    vector<int> list;
+    bstToVector_aux(bst, &list);
+    return list;
+}
+
+/**
+ * Converts a binary search tree into a vector list.
+ *
+ * @tparam T The type of the element
+ * @param root The root node of the tree
+ * @param list The list to store the elements
+ */
+template<typename T>
+void BST<T>::bstToVector_aux(const BSTNode<T>* root, vector<T>* list) const {
+
+    if(root == nullptr)
+        return;
+
+    bstToVector_aux(root->left, list);
+    list->push_back(root->element);
+    bstToVector_aux(root->right, list);
+}
+
 
 #endif

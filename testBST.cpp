@@ -23,6 +23,10 @@ int generateRandomNumber(int, int);
 string getExpression();
 string infix_PostfixExpr(string);
 BST<int>* infix_ExprTree(string);
+bool isHiger(char, char);
+string pop(string);
+bool isOperator(char);
+int priorty(char);
 
 
 /**
@@ -73,30 +77,30 @@ int main() {
     printBT(bst1);
 
     //removing the middle element of the corresponding tree
-    remove(list1[n1/2], bst1);
+    // remove(list1[n1/2], bst1);
 
-    cout << "In-order traversal of bst1 after deleting " << list1[n1/2] <<" is : ";
-    printBT(bst1);
+    // cout << "In-order traversal of bst1 after deleting " << list1[n1/2] <<" is : ";
+    // printBT(bst1);
 
-    BST<int>* bst2 = makeBST(list2);
-    cout << "In-order traversal of bst2 is: ";
-    printBT(bst2);
+    // BST<int>* bst2 = makeBST(list2);
+    // cout << "In-order traversal of bst2 is: ";
+    // printBT(bst2);
 
-    BST<int>* bst3 = mergeBST(bst1, bst2);
-    cout << "In_order traversal of bst3 is: ";
-    printBT(bst3);
+    // BST<int>* bst3 = mergeBST(bst1, bst2);
+    // cout << "In_order traversal of bst3 is: ";
+    // printBT(bst3);
 
-    cout << "The height of bst1 is " << height(bst1) << endl;
-    cout << "The height of bst2 is " << height(bst2) << endl;
-    cout << "The height of merged tree is " << height(bst3) << endl;
+    // cout << "The height of bst1 is " << height(bst1) << endl;
+    // cout << "The height of bst2 is " << height(bst2) << endl;
+    // cout << "The height of merged tree is " << height(bst3) << endl;
 
-    //Exercise 3: Expression Trees
-    string infix = getExpression();
-    cout << "The Post-fix expression is " << infix_PostfixExpr(infix) <<endl;
+    // //Exercise 3: Expression Trees
+    // string infix = getExpression();
+    // cout << "The Post-fix expression is " << infix_PostfixExpr(infix) <<endl;
 
-    BST<int>* bt4 = infix_ExprTree(infix);
-    cout << "In-order traversal of bt4 is: ";
-    printBT(bt4);
+    // BST<int>* bt4 = infix_ExprTree(infix);
+    // cout << "In-order traversal of bt4 is: ";
+    // printBT(bt4);
 
     return 0;
 }
@@ -155,7 +159,7 @@ BST<int>* makeBST(vector<int>& list) {
  */
 void printBT(const BST<int>* bst) {
 
-    printList(bst->getList());
+    // printList(bst->getList());
 }
 
 /**
@@ -191,10 +195,17 @@ void remove(int key, BST<int>* bst) {};
  * @param bstB
  * @return
  */
-BST<int>* mergeBST(const BST<int>* bstA, const BST<int>* bstB) {
-
-    vector<int> list;
-    return new BST<int>(list);
+BST<int>* mergeBST( BST<int>* bstA,  BST<int>* bstB) {
+    if (!bstA)
+        return bstB;
+    if (!bstB)
+        return bstA;
+    // bstA->elm += bstB->elm;
+    // bstA->left = mergeBST(bstA->left, bstB->left);
+    // bstA->right = mergeBST(bstA->right, bstB->right);
+    // return bstA;
+    // vector<int> list;
+    // return new BST<int>(list);
 };
 
 /**
@@ -249,8 +260,83 @@ string infix_PostfixExpr(string infix) {
     if(infix.empty())
         throw runtime_error("infix_PostfixExpr: The infix expression cannot be empty.");
 
-    return "";
-};
+    string postfix, stack;
+    
+    for(int i = 0; i < infix.length(); i++){
+        if(isOperator(infix[i])){
+            if(stack.empty()){
+                stack.push_back(infix[i]);
+            }
+            else if(!stack.empty()){
+                if(infix[i] == '(')
+                    stack.push_back(infix[i]);
+                else if(infix[i] == ')'){
+                    while(*(stack.end()-1) != '('){
+                        postfix.push_back(*(stack.end()-1));
+                        stack = pop(stack);
+                    }
+                    stack = pop(stack);
+                }
+            }
+            else {
+                while(isHiger(*(stack.end()-1), infix[i])){
+                    postfix.push_back(*(stack.end()-1));
+                    stack = pop(stack);
+                }
+                if(!(isHiger(*(stack.end()-1), infix[i])))
+                    stack.push_back(infix[i]);
+            }
+
+        }
+    }
+    while(!stack.empty()){
+        string::iterator itr = stack.end() - 1;
+        postfix.push_back(*itr);
+        stack = pop(stack);
+    }
+
+    return postfix;
+}
+
+bool isOperator(char ch){
+    switch(ch){
+        case '+':
+        case '-':
+        case '*':
+        case '/':
+        case '(':
+        case ')':
+        case '^':
+            return true;
+        default:
+            return false;
+    }
+}
+ int priorty(char ch){
+     switch(ch){
+         case '+':
+         case '-':
+            return 1;
+        case '*':
+        case '/':
+            return 2;
+        case '^':
+            return 3;
+        default:
+            return 0; 
+     }
+ }
+
+ bool isHiger(char ch1, char ch2){
+     if(priorty(ch1) >= priorty(ch2))
+        return true;
+    else
+        return false;
+ }
+
+ string pop(string s){
+     return s.substr(0, s.size()-1);
+ }
 
 /**
  * Generates and returns the expression tree from the infix expression given.
@@ -264,6 +350,7 @@ BST<int>* infix_ExprTree(string infix) {
     if(infix.empty())
         throw runtime_error("infix_ExprTree: The infix expression cannot be empty.");
 
-    vector<int> list;
-    return new BST<int>(list);
+    // vector<int> list;
+    // return new BST<int>(list);
 };
+

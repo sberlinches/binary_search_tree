@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <vector>
+#include <algorithm>
 
 using namespace std;
 
@@ -56,13 +57,14 @@ template <typename T>
 class BST {
 private:
     BSTNode<T>* bst;
-    void insertList(vector<T>*) const;
+    void insertList_aux(vector<T>&, int, int);
     void deleteByCopying(BSTNode<T>*);
     void bstToVector_aux(const BSTNode<T>*, vector<T>*) const;
 public:
     BST(vector<T>& list);
     BSTNode<T>* getTree() const;
     BSTNode<T>* search(const T&);
+    void insertList(vector<T>&);
     void insertElement(const T&);
     void deleteElement(T&);
     int getHeight(const BSTNode<T>*) const;
@@ -83,9 +85,11 @@ BST<T>::BST(vector<T>& list) {
     // Initializes the bst and size
     bst = nullptr;
 
+    // Sorts the list in ascending order
+    sort(list.begin(), list.end(), less<int>());
+
     // Inserts the elements from the list into the bst
-    for (int i = 0; i < list.size(); ++i)
-        insertElement(list[i]);
+    insertList(list);
 }
 
 /**
@@ -150,12 +154,65 @@ void BST<T>::insertElement(const T& element) {
             p = p->right;
     }
 
+    // If the tree is empty, inserts a node in the root
     if(bst == nullptr)
         bst = new BSTNode<T>(element);
+    // If the element to insert is smaller than the root,
+    // is inserted in the left child
     else if (element < prev->element)
         prev->left = new BSTNode<T>(element);
+    // If the element to insert is greater than the root,
+    // is inserted in the right child
     else
         prev->right = new BSTNode<T>(element);
+}
+
+/**
+ * Inserts a vector list and converts into a binary search tree.
+ *
+ * @tparam T The type of the element
+ * @param list The list to insert
+ */
+template<typename T>
+void BST<T>::insertList(vector<T>& list) {
+    insertList_aux(list, list.size()-1, 0);
+}
+
+/**
+ * Inserts a vector list and converts into a binary search tree.
+ *
+ * @tparam T The type of the element
+ * @param list The list to insert
+ * @param max The maximum index of the list
+ * @param min The minimum index of the list
+ */
+template<typename T>
+void BST<T>::insertList_aux(vector<T>& list, int max, int min) {
+
+    int mid = ((max-min)/2)+min;
+    //cout << "______ min: " << min << " max:" << max << " mid:" << mid << " = " << list[mid];
+
+    if(max-min < 0) {
+        return;
+    }
+    // List of two elements left
+    if(max-min == 1) {
+        //cout << " (2 left) INSERT: " << list[min] << ", " << list[max] << endl;
+        insertElement(list[min]);
+        insertElement(list[max]);
+        return;
+    }
+    // List of one element left
+    if (max-min == 0) {
+        //cout << " (1 left) INSERT: " << list[max] << endl;
+        insertElement(list[max]);
+        return;
+    }
+
+    //cout << " INSERT: " << list[mid] << endl;
+    insertElement(list[mid]);
+    insertList_aux(list, mid-1, min);
+    insertList_aux(list, max, mid+1);
 }
 
 /**

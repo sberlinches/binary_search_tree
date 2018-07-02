@@ -57,13 +57,11 @@ int main() {
 
     //Exercise 2: Binary Search Tree
     int n1 = getInput();
-    //generates a list of n1 random numbers [-n1, n1]
     vector<int> list1 = genData(n1);
     cout << "The List1(" << n1 << "): ";
     printList(list1);
 
     int n2 = getInput();
-    //generates a list of n2 random numbers [-n2, n2]
     vector<int> list2 = genData(n2);
     cout << "The List2(" << n2 << "): ";
     printList(list2);
@@ -72,14 +70,13 @@ int main() {
     cout << "In-order traversal of bst1 is: ";
     printBT(bst1);
 
-    //removing the middle element of the corresponding tree
-    remove(list1[n1/2], bst1);
-    cout << "In-order traversal of bst1 after deleting " << list1[n1/2] <<" is : ";
-    printBT(bst1);
-
     BST<int>* bst2 = makeBST(list2);
     cout << "In-order traversal of bst2 is: ";
     printBT(bst2);
+
+    remove(list1[n1/2], bst1);
+    cout << "In-order traversal of bst1 after deleting " << list1[n1/2] <<" is : ";
+    printBT(bst1);
 
     BST<int>* bst3 = mergeBST(bst1, bst2);
     cout << "In_order traversal of bst3 is: ";

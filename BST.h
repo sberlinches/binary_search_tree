@@ -58,15 +58,14 @@ class BST {
 private:
     BSTNode<T>* bst;
     void insertList_aux(vector<T>&, int, int);
-    void deleteByCopying(BSTNode<T>*);
+    void deleteByMerging(BSTNode<T>*&);
     void bstToVector_aux(const BSTNode<T>*, vector<T>*) const;
 public:
     BST(vector<T>& list);
     BSTNode<T>* getTree() const;
-    BSTNode<T>* search(const T&);
     void insertList(vector<T>&);
     void insertElement(const T&);
-    void deleteElement(T&);
+    void findAndDeleteByMerging(const T&);
     int getHeight(const BSTNode<T>*) const;
     void printInOrder(const BSTNode<T>*) const;
     BST<T>* merge(const BST<T>*) const;
@@ -104,36 +103,6 @@ BSTNode<T>* BST<T>::getTree() const {
 }
 
 /**
- * Search for an element in the binary search tree and returns its node.
- * Code extracted from the CPSC-2150 slides.
- *
- * @tparam T The type of the element
- * @param element The element to search for
- * @return The node of the element to search for
- */
-template<typename T>
-BSTNode<T>* BST<T>::search(const T& element) {
-
-    BSTNode<T>* node = bst;
-
-    while (node != nullptr) {
-        // Base case. The element has been found.
-        if (element == node->element)
-            return node;
-        // If the element to look for is smaller than the node's element,
-        // sub-branch left
-        else if (element < node->element)
-            node = node->left;
-        // If the element to look for is greater than the node's element,
-        // sub-branch right
-        else
-            node = node->right;
-    }
-
-    return nullptr;
-};
-
-/**
  * Insert an element in the binary search tree.
  * Code extracted from the CPSC-2150 slides.
  *
@@ -144,10 +113,10 @@ template<typename T>
 void BST<T>::insertElement(const T& element) {
 
     BSTNode<T>* p = bst;
-    BSTNode<T>* prev = nullptr;
+    BSTNode<T>* previous = nullptr;
 
     while(p != nullptr) {
-        prev = p;
+        previous = p;
         if(element < p->element)
             p = p->left;
         else
@@ -159,12 +128,12 @@ void BST<T>::insertElement(const T& element) {
         bst = new BSTNode<T>(element);
     // If the element to insert is smaller than the root,
     // is inserted in the left child
-    else if (element < prev->element)
-        prev->left = new BSTNode<T>(element);
+    else if (element < previous->element)
+        previous->left = new BSTNode<T>(element);
     // If the element to insert is greater than the root,
     // is inserted in the right child
     else
-        prev->right = new BSTNode<T>(element);
+        previous->right = new BSTNode<T>(element);
 }
 
 /**
@@ -216,66 +185,71 @@ void BST<T>::insertList_aux(vector<T>& list, int max, int min) {
 }
 
 /**
- * Deletes an element from the tree.
+ * Code extracted from the CPSC-2150 slides.
+ *
+ * @tparam T The type of the element
+ * @param node
+ */
+template<typename T>
+void BST<T>::deleteByMerging(BSTNode<T>*& node) {
+
+    BSTNode<T> *tmp = node;
+    if (node != 0) {
+        // node has no right child: its left
+        if (!node->right)
+            // child (if any) is attached to its parent;
+            node = node->left;
+        // node has no left child: its right
+        else if (node->left == 0)
+            // child is attached to its parent;
+            node = node->right;
+        // be ready for merging subtrees;
+        else {
+            // 1. move left
+            tmp = node->left;
+            // 2. and then right as far as possible;
+            while (tmp->right != 0)
+                tmp = tmp->right;
+            // 3. establish the link between the rightmost node of the left subtree and the right subtree;
+            tmp->right =  node->right;
+            // 4.
+            tmp = node;
+            // 5.
+            node = node->left;
+        }
+        // 6.
+        delete tmp;
+    }
+}
+
+/**
+ * Deletes the element from the binary search tree.
+ * Code extracted from the CPSC-2150 slides.
  *
  * @tparam T The type of the element
  * @param element The element to delete
  */
 template<typename T>
-void BST<T>::deleteElement(T& element) {
+void BST<T>::findAndDeleteByMerging(const T& element) {
 
-    BSTNode<T>* node = search(element);
+    BSTNode<T> *node = bst, *prev = nullptr;
 
-    if(node != nullptr)
-        deleteByCopying(node);
-}
-
-/**
- * Deletes the node from the tree.
- * Code extracted from the CPSC-2150 slides.
- *
- * @tparam T The type of the element
- * @param node The node of the tree
- */
-template<typename T>
-void BST<T>::deleteByCopying(BSTNode<T>* node) {
-
-    if(node == nullptr)
-        return;
-
-    BSTNode<T>* tmp = node;
-    BSTNode<T>* prev;
-
-    // Node to be deleted has only one child:
-    // Copy the child to the node and delete the child
-    if (node->right == nullptr)
-        node = node->left;
-    else if (node->left == nullptr)
-        node = node->right;
-
-    // Node to be deleted has two children:
-    // Find inorder successor of the node. Copy contents of the inorder
-    // successor to the node and delete the inorder successor.
-    else { //TODO: Something is wrong here
-
+    while (node != 0) {
+        if (node->element == element)
+            break;
         prev = node;
-        // Finds the "right most node" int the left-subtree
-        tmp = node->left;
-        while (tmp->right != nullptr) {
-            prev = tmp;
-            tmp = tmp->right;
-        }
-        // Copy the value of the "right most node" to the node that is going to
-        // be deleted
-        node->element = tmp->element;
-
-        if(prev == node)
-            prev->left = tmp->left;
+        if (element < node->element)
+            node = node->left;
         else
-            prev->right = tmp->left;
+            node = node->right;
     }
 
-    delete tmp;
+    if (node != 0 && node->element == element)
+        if (node == bst)
+            deleteByMerging(bst);
+        else if (prev->left == node)
+            deleteByMerging(prev->left);
+        else deleteByMerging(prev->right);
 }
 
 /**

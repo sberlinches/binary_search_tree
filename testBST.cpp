@@ -175,7 +175,7 @@ int height(const BST<int>* bst) {
  * @param bst The binary search tree to remove from
  */
 void remove(int element, BST<int>* bst) {
-    //bst->deleteElement(element); //TODO: fix it
+    bst->findAndDeleteByMerging(element);
 };
 
 

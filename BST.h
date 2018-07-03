@@ -57,18 +57,18 @@ template <typename T>
 class BST {
 private:
     BSTNode<T>* bst;
+    void insertList(vector<T>&);
     void insertList_aux(vector<T>&, int, int);
+    int getHeight_aux(const BSTNode<T>*) const;
     void deleteByMerging(BSTNode<T>*&);
     void bstToVector_aux(const BSTNode<T>*, vector<T>*) const;
+    void printInOrder_aux(const BSTNode<T>*) const;
 public:
     BST(vector<T>& list);
-    BSTNode<T>* getTree() const;
-    void insertList(vector<T>&);
-    void insertElement(const T&);
-    void findAndDeleteByMerging(const T&);
-    int getHeight(const BSTNode<T>*) const;
-    void printInOrder(const BSTNode<T>*) const;
-    BST<T>* merge(const BST<T>*) const;
+    void insert(const T&);
+    void remove(const T&);
+    int getHeight() const;
+    void printInOrder() const;
     vector<T> bstToVector() const;
 };
 
@@ -92,17 +92,6 @@ BST<T>::BST(vector<T>& list) {
 }
 
 /**
- * Returns the binary search tree.
- *
- * @tparam T The type of the element
- * @return The binary search tree
- */
-template<typename T>
-BSTNode<T>* BST<T>::getTree() const {
-    return bst;
-}
-
-/**
  * Insert an element in the binary search tree.
  * Code extracted from the CPSC-2150 slides.
  *
@@ -110,7 +99,7 @@ BSTNode<T>* BST<T>::getTree() const {
  * @param element The element to insert
  */
 template<typename T>
-void BST<T>::insertElement(const T& element) {
+void BST<T>::insert(const T& element) {
 
     BSTNode<T>* p = bst;
     BSTNode<T>* previous = nullptr;
@@ -137,7 +126,8 @@ void BST<T>::insertElement(const T& element) {
 }
 
 /**
- * Inserts a vector list and converts into a binary search tree.
+ * Inserts a vector list and converts into a balanced binary search tree.
+ * Complexity: O(n)
  *
  * @tparam T The type of the element
  * @param list The list to insert
@@ -148,7 +138,8 @@ void BST<T>::insertList(vector<T>& list) {
 }
 
 /**
- * Inserts a vector list and converts into a binary search tree.
+ * Inserts a vector list and converts into a balanced binary search tree.
+ * Complexity: O(n)
  *
  * @tparam T The type of the element
  * @param list The list to insert
@@ -167,25 +158,27 @@ void BST<T>::insertList_aux(vector<T>& list, int max, int min) {
     // List of two elements left
     if(max-min == 1) {
         //cout << " (2 left) INSERT: " << list[min] << ", " << list[max] << endl;
-        insertElement(list[min]);
-        insertElement(list[max]);
+        insert(list[min]);
+        insert(list[max]);
         return;
     }
     // List of one element left
     if (max-min == 0) {
         //cout << " (1 left) INSERT: " << list[max] << endl;
-        insertElement(list[max]);
+        insert(list[max]);
         return;
     }
 
     //cout << " INSERT: " << list[mid] << endl;
-    insertElement(list[mid]);
+    insert(list[mid]);
     insertList_aux(list, mid-1, min);
     insertList_aux(list, max, mid+1);
 }
 
 /**
+ * Deletes the element from the binary search tree.
  * Code extracted from the CPSC-2150 slides.
+ * Complexity: TODO
  *
  * @tparam T The type of the element
  * @param node
@@ -194,8 +187,9 @@ template<typename T>
 void BST<T>::deleteByMerging(BSTNode<T>*& node) {
 
     BSTNode<T> *tmp = node;
+
     if (node != 0) {
-        // node has no right child: its left
+        // node has no right child: it's left
         if (!node->right)
             // child (if any) is attached to its parent;
             node = node->left;
@@ -211,13 +205,11 @@ void BST<T>::deleteByMerging(BSTNode<T>*& node) {
             while (tmp->right != 0)
                 tmp = tmp->right;
             // 3. establish the link between the rightmost node of the left subtree and the right subtree;
-            tmp->right =  node->right;
-            // 4.
+            tmp->right = node->right;
             tmp = node;
-            // 5.
             node = node->left;
         }
-        // 6.
+
         delete tmp;
     }
 }
@@ -225,16 +217,17 @@ void BST<T>::deleteByMerging(BSTNode<T>*& node) {
 /**
  * Deletes the element from the binary search tree.
  * Code extracted from the CPSC-2150 slides.
+ * Complexity: TODO
  *
  * @tparam T The type of the element
  * @param element The element to delete
  */
 template<typename T>
-void BST<T>::findAndDeleteByMerging(const T& element) {
+void BST<T>::remove(const T& element) {
 
     BSTNode<T> *node = bst, *prev = nullptr;
 
-    while (node != 0) {
+    while (node != nullptr) {
         if (node->element == element)
             break;
         prev = node;
@@ -244,7 +237,7 @@ void BST<T>::findAndDeleteByMerging(const T& element) {
             node = node->right;
     }
 
-    if (node != 0 && node->element == element)
+    if (node != nullptr && node->element == element)
         if (node == bst)
             deleteByMerging(bst);
         else if (prev->left == node)
@@ -254,38 +247,66 @@ void BST<T>::findAndDeleteByMerging(const T& element) {
 
 /**
  * Calculates and returns the height of a balanced binary search tree.
+ * Complexity: O(logn)
+ *
+ * @tparam T The type of the element
+ * @return The height of a balanced binary search tree
+ */
+template<typename T>
+int BST<T>::getHeight() const {
+    return getHeight_aux(bst);
+}
+
+/**
+ * Calculates and returns the height of a balanced binary search tree.
+ * Complexity: O(logn)
  *
  * @tparam T The type of the element
  * @param root The root node of the tree
  * @return The height of a balanced binary search tree
  */
 template<typename T>
-int BST<T>::getHeight(const BSTNode<T>* root) const {
+int BST<T>::getHeight_aux(const BSTNode<T>* root) const {
 
     if(root == nullptr)
         return 0;
 
     // Traverses to the deepest node of each side and return the deepest one.
-    int leftHeight = getHeight(root->left);
-    int rightHeight = getHeight(root->right);
+    int leftHeight = getHeight_aux(root->left);
+    int rightHeight = getHeight_aux(root->right);
     return max(leftHeight, rightHeight) + 1;
 }
 
 /**
  * Prints the binary search tree in-order traversal.
+ * Complexity: O(n)
+ *
+ * @tparam T The type of the element
+ */
+template<typename T>
+void BST<T>::printInOrder() const {
+
+    cout << "[";
+    printInOrder_aux(bst);
+    cout << "]" << endl;
+}
+
+/**
+ * Prints the binary search tree in-order traversal.
+ * Complexity: O(n)
  *
  * @tparam T The type of the element
  * @param root The root node of the tree
  */
 template<typename T>
-void BST<T>::printInOrder(const BSTNode<T>* root) const {
+void BST<T>::printInOrder_aux(const BSTNode<T>* root) const {
 
     if(root == nullptr)
         return;
 
-    printInOrder(root->left);
+    printInOrder_aux(root->left);
     cout << root->element << ",";
-    printInOrder(root->right);
+    printInOrder_aux(root->right);
 }
 
 /**

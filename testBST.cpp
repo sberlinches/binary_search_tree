@@ -3,13 +3,14 @@
 #include <ctime>
 #include <cmath>
 #include "BST.h"
+#include "Stack.h"
 
 using namespace std;
 
-const int MIN = 1;
-const int MAX = 5;
-
 //Exercise 2: Binary Search Tree
+const int MIN = 3;
+const int MAX = 3;
+
 int getInput();
 vector<int> genData(int);
 BST<int>* makeBST(vector<int>&);
@@ -19,9 +20,26 @@ void remove(int, BST<int>*);
 BST<int>* mergeBST(const BST<int>*, const BST<int>*);
 void printList(const vector<int>&);
 int generateRandomNumber(int, int);
+
 //Exercise 3: Expression Trees
+const char ADDITION_SYMBOL = '+';
+const char SUBTRACTION_SYMBOL = '-';
+const char MULTIPLICATION_SYMBOL = '*';
+const char DIVISION_SYMBOL = '/';
+const char PARENTHESES_SYMBOL_OPEN = '(';
+const char PARENTHESES_SYMBOL_CLOSE = ')';
+const char SQUARE_BRACKETS_SYMBOL_OPEN = '[';
+const char SQUARE_BRACKETS_SYMBOL_CLOSE = ']';
+const char CURLY_BRACKETS_SYMBOL_OPEN = '{';
+const char CURLY_BRACKETS_SYMBOL_CLOSE = '}';
+
 string getExpression();
 string infix_PostfixExpr(string);
+bool isOperand(char);
+bool isOperator(char);
+int getPrecedence(char);
+char getOppositeParentheses(char);
+bool isUnexpectedParentheses(char, char);
 BST<int>* infix_ExprTree(string);
 
 
@@ -123,7 +141,8 @@ vector<int> genData(int n) {
     int nTotal = n*2+1;
 
     for (int i = 0; i < nTotal; ++i)
-        list.push_back(generateRandomNumber(-n, nTotal));
+        //list.push_back(generateRandomNumber(-n, nTotal));
+        list.push_back(i);
 
     return list;
 }
@@ -145,26 +164,23 @@ BST<int>* makeBST(vector<int>& list) {
 
 /**
  * Prints the binary tree using an in-order traversal.
- * complexity: TODO
+ * Complexity: O(n)
  *
  * @param bst The binary search tree
  */
 void printBT(const BST<int>* bst) {
-
-    cout << "[";
-    bst->printInOrder(bst->getTree());
-    cout << "]" << endl;
+    bst->printInOrder();
 }
 
 /**
  * Calculates and returns the height of the binary tree.
- * Complexity: TODO
+ * Complexity: O(logn)
  *
  * @param bst The binary search tree
  * @return The height of the binary tree
  */
 int height(const BST<int>* bst) {
-    return bst->getHeight(bst->getTree());
+    return bst->getHeight();
 }
 
 /**
@@ -175,7 +191,7 @@ int height(const BST<int>* bst) {
  * @param bst The binary search tree to remove from
  */
 void remove(int element, BST<int>* bst) {
-    bst->findAndDeleteByMerging(element);
+    bst->remove(element);
 };
 
 
@@ -247,12 +263,16 @@ int generateRandomNumber(int min, int max) {
 
 /**
  * Reads and returns an infix expression from input.
- * Complexity: TODO
  *
  * @return The infix expression
  */
 string getExpression() {
-    return "1+1";
+
+    string infix;
+    cout << "Please enter the expression: ";
+    cin >> infix;
+
+    return infix;
 }
 
 /**
@@ -264,11 +284,160 @@ string getExpression() {
  */
 string infix_PostfixExpr(string infix) {
 
-    if(infix.empty())
-        throw runtime_error("infix_PostfixExpr: The infix expression cannot be empty.");
+    if(isOperator(infix[0]))
+        throw runtime_error("The expression is not infix");
+    else if(infix.size() < 3)
+        throw runtime_error("Expression too short");
 
-    return "";
-};
+    // This solves the issue of removing the opening parentheses
+    infix = PARENTHESES_SYMBOL_OPEN + infix + PARENTHESES_SYMBOL_CLOSE;
+    Stack<char> stack;
+    string output;
+
+    for (int i = 0; i < infix.size(); i++) {
+
+        // 1. If the character is '(' or '{', push it to the stack
+        if (infix[i] == PARENTHESES_SYMBOL_OPEN ||
+            infix[i] == SQUARE_BRACKETS_SYMBOL_OPEN ||
+            infix[i] == CURLY_BRACKETS_SYMBOL_OPEN)
+            stack.push(infix[i]);
+
+            // 2. If the character is ')', pop from the stack until its open tag '('
+            // is found. Is going to add all the operators inside the parentheses,
+            // and then, delete them.
+        else if (infix[i] == PARENTHESES_SYMBOL_CLOSE ||
+                 infix[i] == SQUARE_BRACKETS_SYMBOL_CLOSE ||
+                 infix[i] == CURLY_BRACKETS_SYMBOL_CLOSE)
+        {
+            char openingSymbol = getOppositeParentheses(infix[i]);
+            while (stack.getSize() > 0 && stack.top() != openingSymbol) {
+                if(isUnexpectedParentheses(stack.top(), openingSymbol))
+                    throw runtime_error("Error position " + to_string(i) + ": unexpected '" + infix[i] + "'");
+                output += stack.pop();
+            }
+            // Removes the opening parentheses
+            stack.pop();
+        }
+
+            // 3. If the character is an operator, pop from the stack until the same
+            // operator is found.
+        else if(isOperator(infix[i])) {
+            while (stack.getSize() > 0 && getPrecedence(infix[i]) <= getPrecedence(stack.top()))
+                output += stack.pop();
+            // Push the operator to the stack (In the last iteration it's going
+            // to push an item that is going to be added in the point 6
+            stack.push(infix[i]);
+        }
+
+            // 4. If the character is an operand, add it to output
+        else if (isOperand(infix[i]))
+            output += infix[i];
+        // 5. Everything else is discarded
+    }
+
+    return output;
+}
+
+/**
+ * Checks and returns whether the character is an operand or not.
+ * E.G.: 1, A
+ *
+ * @param c The character to check
+ * @return Whether the character is an operand or not
+ */
+bool isOperand(char c) {
+    return (isalpha(c) || isdigit(c));
+}
+
+/**
+ * Checks and returns whether the character is a operator or not.
+ * E.G.: +, -, *, /
+ *
+ * @param c The character to checked
+ * @return Whether the character is a valid operator or not
+ */
+bool isOperator(char c) {
+    return (c==ADDITION_SYMBOL ||
+            c==SUBTRACTION_SYMBOL ||
+            c==MULTIPLICATION_SYMBOL ||
+            c==DIVISION_SYMBOL);
+}
+
+/**
+ * Check and returns the precedence of the operator.
+ * 1. Multiplications and divisions
+ * 2. Additions and subtractions
+ * Non-defined operators won't have any precedence
+ *
+ * @param o The operator to check
+ * @return The precedence of the operator
+ */
+int getPrecedence(char o) {
+
+    switch(o) {
+        case MULTIPLICATION_SYMBOL:
+        case DIVISION_SYMBOL:
+            return 2;
+        case ADDITION_SYMBOL:
+        case SUBTRACTION_SYMBOL:
+            return 1;
+        default:
+            return 0;
+    }
+}
+
+/**
+ * Exchange the parentheses for its opposite symbol.
+ * @param s The text to change
+ */
+void exchangeParentheses(string& s) {
+
+    if(s.empty())
+        throw runtime_error("The string is empty");
+
+    for (int i = 0; i < s.size(); i++)
+        s[i] = getOppositeParentheses(s[i]);
+}
+
+/**
+ * Returns the opposite of the defined parentheses symbols.
+ * '(' returns ')'
+ * @param c The character to find for
+ * @return The opposite parentheses symbol
+ */
+char getOppositeParentheses(char c) {
+
+    switch (c) {
+        case PARENTHESES_SYMBOL_OPEN:
+            return PARENTHESES_SYMBOL_CLOSE;
+        case PARENTHESES_SYMBOL_CLOSE:
+            return PARENTHESES_SYMBOL_OPEN;
+        case SQUARE_BRACKETS_SYMBOL_OPEN:
+            return SQUARE_BRACKETS_SYMBOL_CLOSE;
+        case SQUARE_BRACKETS_SYMBOL_CLOSE:
+            return SQUARE_BRACKETS_SYMBOL_OPEN;
+        case CURLY_BRACKETS_SYMBOL_OPEN:
+            return CURLY_BRACKETS_SYMBOL_CLOSE;
+        case CURLY_BRACKETS_SYMBOL_CLOSE:
+            return CURLY_BRACKETS_SYMBOL_OPEN;
+        default:
+            return c;
+    }
+}
+
+bool isUnexpectedParentheses(char xxx, char s) {
+
+    switch (s) {
+        case PARENTHESES_SYMBOL_OPEN:
+            return (xxx == SQUARE_BRACKETS_SYMBOL_OPEN || xxx == CURLY_BRACKETS_SYMBOL_OPEN);
+        case SQUARE_BRACKETS_SYMBOL_OPEN:
+            return (xxx == PARENTHESES_SYMBOL_OPEN || xxx == CURLY_BRACKETS_SYMBOL_OPEN);
+        case CURLY_BRACKETS_SYMBOL_OPEN:
+            return (xxx == PARENTHESES_SYMBOL_OPEN || xxx == SQUARE_BRACKETS_SYMBOL_OPEN);
+        default:
+            return true;
+    }
+}
 
 /**
  * Generates and returns the expression tree from the infix expression given.
